@@ -2,6 +2,7 @@
 
 namespace prowebcraft\yii2log\trait;
 
+use prowebcraft\yii2log\Telegram;
 use yii\log\Logger;
 
 /**

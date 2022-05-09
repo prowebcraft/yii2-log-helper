@@ -1,8 +1,8 @@
 {
     "name": "prowebcraft/yii2-log-helper",
-    "description": "Base helper class for better logging experience",
-    "keywords": ["yii2", "helper", "log", "logger"],
-    "homepage": "https://github.com/prowebcraft/yii2-api-abstract-controller",
+    "description": "Base helper class for better logging experience. Send messages to telegram",
+    "keywords": ["yii2", "helper", "log", "logger", "telegram"],
+    "homepage": "https://github.com/prowebcraft/yii2-log-helper",
     "type": "yii2-extension",
     "license": "BSD-4-Clause",
     "authors": [
