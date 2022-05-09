@@ -21,6 +21,18 @@ class TelegramBot extends Component
      */
     public string $token;
 
+    /**
+     * Default telegram target
+     * @var string
+     */
+    public string $defaultChatId;
+
+    /**
+     * Override default target per log category
+     * @var array
+     */
+    public array $targetPerCategory = [];
+
     protected ?Client $client = null;
 
     /**
@@ -29,8 +41,10 @@ class TelegramBot extends Component
     public function init()
     {
         parent::init();
-        if ($this->token === null) {
-            throw new InvalidConfigException(self::className() . '::$token property must be set');
+        foreach (['token', 'defaultChatId'] as $property) {
+            if ($this->$property === null) {
+                throw new InvalidConfigException(self::class . "::\$$property property must be set");
+            }
         }
     }
 
@@ -45,6 +59,16 @@ class TelegramBot extends Component
         }
 
         return $this->client;
+    }
+
+    /**
+     * Get telegram target by message category
+     * @param string $category
+     * @return string
+     */
+    public function getTarget(string $category): string
+    {
+        return $this->targetPerCategory[$category] ?? $this->defaultChatId;
     }
 
     /**

@@ -28,8 +28,11 @@ use yii\base\InvalidConfigException;
 class TelegramTarget extends Target
 {
 
-    public string $defaultChatId;
-    public array $extraTargets = [];
+    /**
+     * Default telegram target
+     * @var string
+     */
+    protected string $defaultChatId;
 
     /**
      * Check required properties
@@ -37,21 +40,11 @@ class TelegramTarget extends Target
     public function init()
     {
         parent::init();
-        foreach (['defaultChatId'] as $property) {
-            if ($this->$property === null) {
-                throw new InvalidConfigException(self::class . "::\$$property property must be set");
-            }
+        /** @var TelegramBot $tg */
+        if (!\Yii::$app->has('telegram')) {
+            throw new InvalidConfigException("Telegram component must be configured properly");
         }
-    }
-
-    /**
-     * Get telegram target by message category
-     * @param string $category
-     * @return string
-     */
-    public function getTarget(string $category): string
-    {
-        return $this->defaultChatId;
+        $this->defaultChatId = \Yii::$app->telegram->defaultChatId;
     }
 
     /**
@@ -60,13 +53,20 @@ class TelegramTarget extends Target
      */
     public function export()
     {
-        $messages = array_map([$this, 'formatMessage'], $this->messages);
-        if (count($messages) <= 3) {
-            $message = implode("\n", $messages);
-            \Yii::$app->telegram->sendMessage($this->defaultChatId, $message);
-        } else {
-            foreach ($messages as $message) {
-                \Yii::$app->telegram->sendMessage($this->getTarget($message['category']), $message);
+        $buffer = [];
+        foreach ($this->messages as $message) {
+            $target = \Yii::$app->telegram->getTarget($message[2]);
+            $buffer[$target][] = $message;
+        }
+        foreach ($buffer as $target => $messages) {
+            $messages = array_map([$this, 'formatMessage'], $messages);
+            if (count($messages) <= 3) {
+                $message = implode("\n", $messages);
+                \Yii::$app->telegram->sendMessage($target, $message);
+            } else {
+                foreach ($messages as $message) {
+                    \Yii::$app->telegram->sendMessage($target, $message);
+                }
             }
         }
     }
@@ -83,8 +83,10 @@ class TelegramTarget extends Target
         $level = Logger::getLevelName($level);
         if (!is_string($text)) {
             // exceptions may not be serializable if in the call stack somewhere is a Closure
-            if ($text instanceof \Exception || $text instanceof \Throwable) {
-                $text = (string) $text;
+            if ($text instanceof \Throwable) {
+                $text = Log::describeException($text);
+                // add extra info
+                $text .= "\n\n<b>Path:</b> <code>" . $_SERVER['REQUEST_URI'] ."</code>\n";
             } else {
                 $text = VarDumper::export($text);
             }

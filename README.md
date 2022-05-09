@@ -16,9 +16,6 @@ class MarsExpedition {
 
     use Log;
     
-    /** @var string Log Category */
-    protected static string $category = 'log_category';
-    
     public function doHeavyJob(){
         self::info('Prepare to launch');
         $missionInfo = [
@@ -46,14 +43,17 @@ To send error/warning messages to telegram add component and log target to your 
         // ...
         'telegram' => [
             'class' => \prowebcraft\yii2log\TelegramBot::class,
-            'token' => '123:xyz' // telegram bot token
+            'token' => '123:xyz' // telegram bot token,
+            'defaultChatId' => -1000000000, // group or channel id,
+            'targetPerCategory' => [
+                'mission_control' => -20000000
+            ],
         ],
         'log' => [
             'traceLevel' => YII_DEBUG ? 3 : 0,
             'targets' => [
                 [
                     'class' => \prowebcraft\yii2log\TelegramTarget::class,
-                    'defaultChatId' => -1000000000, // group or channel id
                     'levels' => ['error', 'warning'], // log levels
                     'logVars' => []
                 ]

@@ -3,6 +3,8 @@
 namespace prowebcraft\yii2log\trait;
 
 use prowebcraft\yii2log\Telegram;
+use prowebcraft\yii2log\TelegramBot;
+use prowebcraft\yii2log\TelegramTarget;
 use yii\log\Logger;
 
 /**
@@ -12,7 +14,25 @@ trait Log
 {
 
     /** @var string Log Category */
-    protected static string $category = 'app';
+    protected static string $category = __CLASS__;
+
+    /**
+     * Send message (sprintf format) to telegram
+     * @param $format
+     * @param ...$args
+     * @return void
+     * @throws \yii\httpclient\Exception
+     */
+    public static function toTelegram($format, ...$args): void
+    {
+        if (($message = static::getMessageBody(func_get_args()))) {
+            if (\Yii::$app->has('telegram')) {
+                $telegram = \Yii::$app->telegram;
+                $target = $telegram->getTarget(static::$category);
+                $telegram->sendMessage($target, $message);
+            }
+        }
+    }
 
     /**
      * Debug message (sprintf format)
@@ -95,6 +115,9 @@ trait Log
                 if (is_bool($v)) {
                     return $v ? 'true' : 'false';
                 }
+                if ($v instanceof \Throwable) {
+                    return self::describeException($v);
+                }
                 if (is_object($v) && method_exists($v, '__toString')) {
                     return (string)$v;
                 }
@@ -108,5 +131,22 @@ trait Log
 
         return $message;
     }
+
+    /**
+     * Describe exception
+     * @param \Throwable $v
+     * @return string
+     */
+    public static function describeException(\Throwable $v): string
+    {
+        return get_class($v) . " " . sprintf("[%s] %s\n\n<b>File:</b> %s:%s\n<b>Trace:</b> <code>%s</code>",
+                $v->getCode(),
+                $v->getMessage(),
+                $v->getFile(),
+                $v->getLine(),
+                $v->getTraceAsString()
+            );
+    }
+
 
 }
