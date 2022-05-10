@@ -134,18 +134,67 @@ trait Log
 
     /**
      * Describe exception
-     * @param \Throwable $v
+     * @param \Throwable $e
      * @return string
      */
-    public static function describeException(\Throwable $v): string
+    public static function describeException(\Throwable $e): string
     {
-        return get_class($v) . " " . sprintf("[%s] %s\n\n<b>File:</b> %s:%s\n<b>Trace:</b> <code>%s</code>",
-                $v->getCode(),
-                $v->getMessage(),
-                $v->getFile(),
-                $v->getLine(),
-                $v->getTraceAsString()
+        return get_class($e) . " " . sprintf("[%s] %s\n\n<b>File:</b> %s:%s\n<b>Trace:</b> <code>%s</code>",
+                $e->getCode(),
+                $e->getMessage(),
+                $e->getFile(),
+                $e->getLine(),
+                self::getExceptionTraceAsString($e)
             );
+    }
+
+    /**
+     * Get Trace as string
+     *
+     * @param \Throwable $exception
+     * @return string
+     */
+    public static function getExceptionTraceAsString(\Throwable $exception, int $skipFrames = 0, int $frames = 5): string
+    {
+        $rtn = "";
+        $count = 0;
+        $trace = array_slice($exception->getTrace(), $skipFrames, $frames);
+        foreach ($trace as $frame) {
+            $args = "";
+            if (isset($frame['args'])) {
+                $args = array();
+                foreach ($frame['args'] as $arg) {
+                    if (is_string($arg)) {
+                        if (strlen($arg) > 255) {
+                            $arg = substr($arg, 0, 255) . '...';
+                        }
+                        $args[] = "'" . $arg . "'";
+                    } elseif (is_array($arg)) {
+                        $args[] = "Array";
+                    } elseif (is_null($arg)) {
+                        $args[] = 'NULL';
+                    } elseif (is_bool($arg)) {
+                        $args[] = ($arg) ? "true" : "false";
+                    } elseif (is_object($arg)) {
+                        $args[] = get_class($arg);
+                    } elseif (is_resource($arg)) {
+                        $args[] = get_resource_type($arg);
+                    } else {
+                        $args[] = $arg;
+                    }
+                }
+                $args = join(", ", $args);
+            }
+            $rtn .= sprintf("#%s %s(%s): %s(%s)\n",
+                $count,
+                $frame['file'] ?? '',
+                $frame['line'] ?? '',
+                $frame['function'],
+                $args);
+            $count++;
+        }
+
+        return $rtn;
     }
 
 
