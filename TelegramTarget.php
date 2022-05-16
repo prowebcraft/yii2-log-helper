@@ -1,7 +1,6 @@
 <?php
 namespace prowebcraft\yii2log;
 
-use appiclab\yii2module\helpers\Utils;
 use yii\helpers\VarDumper;
 use yii\log\Logger;
 use yii\log\Target;
