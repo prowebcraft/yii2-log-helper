@@ -85,7 +85,9 @@ class TelegramTarget extends Target
             if ($text instanceof \Throwable) {
                 $text = Log::describeException($text);
                 // add extra info
-                $text .= "\n\n<b>Path:</b> <code>" . $_SERVER['REQUEST_URI'] ."</code>\n";
+                if (isset($_SERVER['REQUEST_URI'])) {
+                    $text .= "\n\n<b>Path:</b> <code>" . $_SERVER['REQUEST_URI'] ."</code>\n";
+                }
             } else {
                 $text = VarDumper::export($text);
             }
