@@ -345,4 +345,15 @@ trait Log
         return new static(self::class);
     }
 
+    /**
+     * Add extra request info
+     * @param string $key
+     * @param string $value
+     * @return void
+     */
+    public static function setExtraRequestInfo(string $key, string $value): void
+    {
+        self::$extraRequestInfo[$key] = $value;
+    }
+
 }
