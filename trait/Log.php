@@ -276,16 +276,33 @@ trait Log
      * Add request data information
      * @return static
      * @throws \yii\base\InvalidConfigException
+     * @noinspection JsonEncodingApiUsageInspection
      */
     public static function withRequestData($external = false): static
     {
         $details = self::getRequestContext();
         $request = Yii::$app->getRequest();
         if (!empty($request->getBodyParams())) {
-            $details .= "\n<b>Request Params:</b> " . json_encode($request->getBodyParams(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n";
+            $details .= "\n<b>Request Params:</b> "
+                . json_encode($request->getBodyParams(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n";
         }
 
         return self::addLogBuffer("<b>Request Data:</b> %s", ($external ? self::createTraceFile($details) : "<code>$details</code>"));
+    }
+
+    /**
+     * Store data in external file
+     * @param string|array $data
+     * @param string $title
+     * @return static
+     * @noinspection JsonEncodingApiUsageInspection
+     */
+    public static function withExternalData(string|array $data, string $title = 'Details'): static
+    {
+        if (is_array($data)) {
+            $data = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        }
+        return self::addLogBuffer("<b>%s:</b> %s", $title, self::createTraceFile($data));
     }
 
     /**
