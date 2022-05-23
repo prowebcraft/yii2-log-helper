@@ -321,7 +321,7 @@ trait Log
             $traceDir = 'trace';
             $tracePath = \Yii::getAlias('@webroot') . DIRECTORY_SEPARATOR . $traceDir;
             FileHelper::createDirectory($tracePath);
-            $traceName = sprintf("%s_%s.%s", date('Ymd_His'), $filename, $ext);
+            $traceName = sprintf("%s_%s_%s.%s", date('Ymd_His'), $filename, random_int(1000, 9999), $ext);
             file_put_contents($tracePath . DIRECTORY_SEPARATOR . $traceName, $content);
             return \Yii::$app->urlManager->createAbsoluteUrl('/' .  $traceDir . '/' . $traceName);
         } catch (\Throwable $e) {
