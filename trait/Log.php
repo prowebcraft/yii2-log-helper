@@ -275,7 +275,6 @@ trait Log
     /**
      * Add request data information
      * @return static
-     * @throws \yii\base\InvalidConfigException
      * @noinspection JsonEncodingApiUsageInspection
      */
     public static function withRequestData($external = false): static

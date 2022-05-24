@@ -34,6 +34,12 @@ class TelegramTarget extends Target
     protected string $defaultChatId;
 
     /**
+     * Include Trace (comes from Yii2) in message
+     * @var bool
+     */
+    protected bool $withTraces = false;
+
+    /**
      * Check required properties
      */
     public function init()
@@ -93,7 +99,7 @@ class TelegramTarget extends Target
             }
         }
         $traces = [];
-        if (isset($message[4])) {
+        if ($this->withTraces && isset($message[4])) {
             foreach ($message[4] as $trace) {
                 $traces[] = "<code>in {$trace['file']}:{$trace['line']}</code>";
             }
