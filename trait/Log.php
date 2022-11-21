@@ -31,6 +31,10 @@ trait Log
             if (\Yii::$app->has('telegram')) {
                 $telegram = \Yii::$app->telegram;
                 $target = $telegram->getTarget(static::$category);
+                // Apeend extra log from buffer
+                while ($extra = array_shift(self::$logBuffer)) {
+                    $message .= "\n" . $extra;
+                }
                 $telegram->sendMessage($target, $message);
             }
         }
