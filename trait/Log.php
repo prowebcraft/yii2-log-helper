@@ -16,7 +16,7 @@ trait Log
     protected static array $extraRequestInfo = [];
 
     /** @var string Log Category */
-    protected static string $category = __CLASS__;
+    protected static string $category = 'app';
 
     /**
      * Send message (sprintf format) to telegram
