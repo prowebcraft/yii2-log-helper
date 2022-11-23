@@ -41,73 +41,6 @@ trait Log
     }
 
     /**
-     * Debug message (sprintf format)
-     * @param $format
-     * @param ...$args
-     * @return void
-     */
-    public static function debug($format, ...$args): void
-    {
-        if (($message = static::getMessageBody(func_get_args()))) {
-            static::processLog($message, Logger::LEVEL_TRACE);
-        }
-    }
-
-    /**
-     * Info message (sprintf format)
-     * @param $format
-     * @param ...$args
-     * @return void
-     */
-    public static function info($format, ...$args): void
-    {
-        if (($message = static::getMessageBody(func_get_args()))) {
-            static::processLog($message, Logger::LEVEL_INFO);
-        }
-    }
-
-    /**
-     * Warning message (sprintf format)
-     * @param $format
-     * @param ...$args
-     * @return void
-     */
-    public static function warning($format, ...$args): void
-    {
-        if (($message = static::getMessageBody(func_get_args()))) {
-            static::processLog($message, Logger::LEVEL_WARNING);
-        }
-    }
-
-    /**
-     * Error message (sprintf format)
-     * @param $format
-     * @param ...$args
-     * @return void
-     */
-    public static function error($format, ...$args): void
-    {
-        if (($message = static::getMessageBody(func_get_args()))) {
-            static::processLog($message, Logger::LEVEL_ERROR);
-        }
-    }
-
-    /**
-     * Process logging
-     * @param string $message
-     * @param int $level
-     * @return void
-     */
-    protected static function processLog(string $message, int $level = Logger::LEVEL_INFO): void
-    {
-        // Apeend extra log from buffer
-        while ($extra = array_shift(self::$logBuffer)) {
-            $message .= "\n" . $extra;
-        }
-        \Yii::getLogger()->log($message, $level, static::$category);
-    }
-
-    /**
      * Process log message body in sprintf style
      * @param array $args
      * @return string|null
@@ -164,8 +97,11 @@ trait Log
      * @param \Throwable $exception
      * @return string
      */
-    public static function getExceptionTraceAsString(\Throwable $exception, int $skipFrames = 0, int $frames = 5): string
-    {
+    public static function getExceptionTraceAsString(
+        \Throwable $exception,
+        int $skipFrames = 0,
+        int $frames = 5
+    ): string {
         $rtn = "";
         $count = 0;
         $trace = array_slice($exception->getTrace(), $skipFrames, $frames);
@@ -205,6 +141,78 @@ trait Log
         }
 
         return $rtn;
+    }
+
+    /**
+     * Debug message (sprintf format)
+     * @param $format
+     * @param ...$args
+     * @return void
+     */
+    public static function debug($format, ...$args): void
+    {
+        if (($message = static::getMessageBody(func_get_args()))) {
+            static::processLog($message, Logger::LEVEL_TRACE);
+        }
+    }
+
+    /**
+     * Process logging
+     * @param string $message
+     * @param int $level
+     * @return void
+     */
+    protected static function processLog(string $message, int $level = Logger::LEVEL_INFO): void
+    {
+        // Apeend extra log from buffer
+        while ($extra = array_shift(self::$logBuffer)) {
+            $message .= "\n" . $extra;
+        }
+        \Yii::getLogger()->log($message, $level, static::$category);
+    }
+
+    /**
+     * Info message (sprintf format)
+     * @param $format
+     * @param ...$args
+     * @return void
+     */
+    public static function info($format, ...$args): void
+    {
+        if (($message = static::getMessageBody(func_get_args()))) {
+            static::processLog($message, Logger::LEVEL_INFO);
+        }
+    }
+
+    /**
+     * Warning message (sprintf format)
+     * @param $format
+     * @param ...$args
+     * @return void
+     */
+    public static function warning($format, ...$args): void
+    {
+        if (($message = static::getMessageBody(func_get_args()))) {
+            static::processLog($message, Logger::LEVEL_WARNING);
+        }
+    }
+
+    /**
+     * Add request data information
+     * @return static
+     * @noinspection JsonEncodingApiUsageInspection
+     */
+    public static function withRequestData($external = false): static
+    {
+        $details = self::getRequestContext();
+        $request = Yii::$app->getRequest();
+        if (!empty($request->getBodyParams())) {
+            $details .= "\n<b>Request Params:</b> "
+                . json_encode($request->getBodyParams(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n";
+        }
+
+        return self::addLogBuffer("<b>Request Data:</b> %s",
+            ($external ? self::createTraceFile($details) : "<code>$details</code>"));
     }
 
     /**
@@ -270,42 +278,25 @@ trait Log
         }
         $out = '';
         foreach ($res as $k => $v) {
-            $out .= "$k: ". (is_scalar($v) ? $v : json_encode($v, JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT))."\n";
+            $out .= "$k: " . (is_scalar($v) ? $v : json_encode($v, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)) . "\n";
         }
 
         return $out;
     }
 
     /**
-     * Add request data information
+     * Extra data, will be appended to next message
+     * @param $format
+     * @param ...$args
      * @return static
-     * @noinspection JsonEncodingApiUsageInspection
      */
-    public static function withRequestData($external = false): static
+    public static function addLogBuffer($format, ...$args): static
     {
-        $details = self::getRequestContext();
-        $request = Yii::$app->getRequest();
-        if (!empty($request->getBodyParams())) {
-            $details .= "\n<b>Request Params:</b> "
-                . json_encode($request->getBodyParams(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n";
+        if (($message = static::getMessageBody(func_get_args()))) {
+            static::$logBuffer[] = $message;
         }
 
-        return self::addLogBuffer("<b>Request Data:</b> %s", ($external ? self::createTraceFile($details) : "<code>$details</code>"));
-    }
-
-    /**
-     * Store data in external file
-     * @param string|array $data
-     * @param string $title
-     * @return static
-     * @noinspection JsonEncodingApiUsageInspection
-     */
-    public static function withExternalData(string|array $data, string $title = 'Details'): static
-    {
-        if (is_array($data)) {
-            $data = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-        }
-        return self::addLogBuffer("<b>%s:</b> %s", $title, self::createTraceFile($data));
+        return new static(self::class);
     }
 
     /**
@@ -325,8 +316,30 @@ trait Log
             $tracePath = \Yii::getAlias('@webroot') . DIRECTORY_SEPARATOR . $traceDir;
             FileHelper::createDirectory($tracePath);
             $traceName = sprintf("%s_%s_%s.%s", date('Ymd_His'), $filename, random_int(1000, 9999), $ext);
-            file_put_contents($tracePath . DIRECTORY_SEPARATOR . $traceName, $content);
-            return \Yii::$app->urlManager->createAbsoluteUrl('/' .  $traceDir . '/' . $traceName);
+            $traceFile = $tracePath . DIRECTORY_SEPARATOR . $traceName;
+            if ($ext === 'html' && stripos($content, '<html') === false) {
+                $content = '<!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>' . $traceName . '</title>
+                    <link href="https://fonts.googleapis.com/css?family=Open Sans" rel="stylesheet">
+                    <style>
+                        body {
+                            font-family: "Open Sans"; font-size: 14px;
+                        }
+                    </style>
+                </head>
+                <body>
+                    ' . $content . '
+                </body>
+                </html>
+                ';
+            }
+            if (!file_put_contents($traceFile, $content)) {
+                throw new \RuntimeException('Unable to write trace content to ' . $traceFile);
+            }
+            return \Yii::$app->urlManager->createAbsoluteUrl('/' . $traceDir . '/' . $traceName);
         } catch (\Throwable $e) {
             self::error('Error creating trace file: %s', $e);
         }
@@ -334,18 +347,31 @@ trait Log
     }
 
     /**
-     * Extra data, will be appended to next message
+     * Error message (sprintf format)
      * @param $format
      * @param ...$args
-     * @return static
+     * @return void
      */
-    public static function addLogBuffer($format, ...$args): static
+    public static function error($format, ...$args): void
     {
         if (($message = static::getMessageBody(func_get_args()))) {
-            static::$logBuffer[] = $message;
+            static::processLog($message, Logger::LEVEL_ERROR);
         }
+    }
 
-        return new static(self::class);
+    /**
+     * Store data in external file
+     * @param string|array $data
+     * @param string $title
+     * @return static
+     * @noinspection JsonEncodingApiUsageInspection
+     */
+    public static function withExternalData(string|array $data, string $title = 'Details'): static
+    {
+        if (is_array($data)) {
+            $data = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        }
+        return self::addLogBuffer("<b>%s:</b> %s", $title, self::createTraceFile($data));
     }
 
     /**
