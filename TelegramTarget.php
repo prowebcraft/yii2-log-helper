@@ -106,7 +106,7 @@ class TelegramTarget extends Target
         }
 
         $prefix = $this->getMessagePrefix($message);
-        return '<code>' . $this->getTime($timestamp) . " {$prefix}[$level][$category]</code>\n$text"
+        return "<code>[$category][$level]</code>\n$text"
             . (empty($traces) ? '' : "\n    " . implode("\n    ", $traces));
     }
 }
