@@ -206,9 +206,12 @@ trait Log
     {
         $details = self::getRequestContext();
         $request = Yii::$app->getRequest();
-        if (!empty($request->getBodyParams())) {
+        if ($body = $request->getRawBody() ?: $request->getBodyParams()) {
+            if (is_string($body)) {
+                $body = json_decode($body, true);
+            }
             $details .= "\n<b>Request Params:</b> "
-                . json_encode($request->getBodyParams(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n";
+                . json_encode($body, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n";
         }
 
         return self::addLogBuffer("<b>Request Data:</b> %s",
@@ -217,10 +220,12 @@ trait Log
 
     /**
      * Get request data
+     * @param bool $withAllHeaders
+     * Add all headers to context
      * @return string
      * @noinspection PhpComposerExtensionStubsInspection
      */
-    public static function getRequestContext(): string
+    public static function getRequestContext(bool $withAllHeaders = false): string
     {
         $res = [];
         if (isset($_SERVER['REQUEST_METHOD'])) {
@@ -246,7 +251,9 @@ trait Log
             if ($session->isActive) {
                 $res['session'] = $session->id;
             }
-            $res['headers'] = Yii::$app->getRequest()->getHeaders()->toArray();
+            if ($withAllHeaders) {
+                $res['headers'] = Yii::$app->getRequest()->getHeaders()->toArray();
+            }
         } else {
             if (isset($_SERVER['SCRIPT_FILENAME'])) {
                 $res['file'] = $_SERVER['SCRIPT_FILENAME'];
