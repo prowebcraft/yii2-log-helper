@@ -28,8 +28,8 @@ trait Log
     public static function toTelegram($format, ...$args): void
     {
         if (($message = static::getMessageBody(func_get_args()))) {
-            if (\Yii::$app->has('telegram')) {
-                $telegram = \Yii::$app->telegram;
+            if (Yii::$app->has('telegram')) {
+                $telegram = Yii::$app->telegram;
                 $target = $telegram->getTarget(static::$category);
                 // Apeend extra log from buffer
                 while ($extra = array_shift(self::$logBuffer)) {
@@ -168,7 +168,7 @@ trait Log
         while ($extra = array_shift(self::$logBuffer)) {
             $message .= "\n" . $extra;
         }
-        \Yii::getLogger()->log($message, $level, static::$category);
+        Yii::getLogger()->log($message, $level, static::$category);
     }
 
     /**
@@ -346,7 +346,7 @@ trait Log
             if (!file_put_contents($traceFile, $content)) {
                 throw new \RuntimeException('Unable to write trace content to ' . $traceFile);
             }
-            return \Yii::$app->urlManager->createAbsoluteUrl('/' . $traceDir . '/' . $traceName);
+            return Yii::$app->urlManager->createAbsoluteUrl('/' . $traceDir . '/' . $traceName);
         } catch (\Throwable $e) {
             self::error('Error creating trace file: %s', $e);
         }
