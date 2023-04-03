@@ -202,7 +202,7 @@ trait Log
      * @return static
      * @noinspection JsonEncodingApiUsageInspection
      */
-    public static function withRequestData($external = false): static
+    public static function withRequestData($external = true): static
     {
         $details = self::getRequestContext();
         $request = Yii::$app->getRequest();
