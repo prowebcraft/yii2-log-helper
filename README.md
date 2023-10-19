@@ -64,3 +64,28 @@ To send error/warning messages to telegram add component and log target to your 
 ];
 ```
 
+## Output messages to console
+To output messages to console in Console applications log target to your config (ex. **console/main-local.php**):
+
+```php
+    'components' => [,
+        'log' => [
+            'traceLevel' => YII_DEBUG ? 3 : 0,
+            'flushInterval' => 1,
+            'targets' => [
+                [
+                    'class' => \prowebcraft\yii2log\ConsoleTarget::class,
+                    'levels' => ['error', 'warning', 'info', 'trace'],
+                    'logVars' => [],
+                    'displayCategory' => true,
+                    'except' => [
+                        'yii\*'
+                    ],
+                    'exportInterval' => 1,
+                ]
+            ],
+        ],
+    ],
+];
+```
+
