@@ -2,9 +2,11 @@
 
 namespace prowebcraft\yii2log;
 
+use yii\httpclient\Response;
 use yii\base\Component;
 use yii\base\InvalidConfigException;
 use yii\httpclient\Client;
+use yii\httpclient\Exception;
 
 /**
  * Telegram Bot
@@ -63,10 +65,10 @@ class TelegramBot extends Component
 
     /**
      * Get telegram target by message category
-     * @param string $category
+     * @param string|null $category
      * @return string
      */
-    public function getTarget(string $category): string
+    public function getTarget(string $category = null): string
     {
         return $this->targetPerCategory[$category] ?? $this->defaultChatId;
     }
@@ -124,5 +126,86 @@ class TelegramBot extends Component
         }
 
         return isset($response) ? $response->data : null;
+    }
+
+    /**
+     * Send document to telegram. You must provide content or file path to send
+     * @param string|null $chatId
+     * target chat id
+     * @param string|null $content
+     * Content to send
+     * @param string|null $file
+     * File to send
+     * @param string|null $caption
+     * File Caption
+     * @param string|null $filename
+     * File name.
+     * @param array $payload
+     * Extra/overrided payload params
+     * @return array|null
+     * @throws Exception
+     * @throws InvalidConfigException
+     */
+    public function sendDocument(
+        string $chatId = null,
+        string $content = null,
+        string $file = null,
+        string $filename = null,
+        string $caption = null,
+        array $payload = [],
+    ) {
+        if ($chatId === null) {
+            $chatId = $this->getTarget();
+        }
+        if (!$file && !$content) {
+            throw new \InvalidArgumentException('No file or content provided');
+        }
+
+        $payload = array_merge([
+            'chat_id' => $chatId,
+            'disable_web_page_preview' => null,
+            'disable_notification' => null,
+            'reply_to_message_id' => null,
+        ], $payload);
+        if ($caption) {
+            $caption = strip_tags($caption, '<b><strong><i><em><a><code><pre>');
+            $payload['caption'] = $caption;
+            $payload['parse_mode'] = 'html';
+        }
+        $request = $this->getClient()->createRequest()
+            ->setUrl('sendDocument')
+            ->setData($payload)
+        ;
+        if ($file) {
+            if (empty($filename)) {
+                $filename = basename($file);
+            }
+            $request->addFile('document', $file, [
+                'fileName' => $filename
+            ]);
+        } else {
+            $request->addFileContent('document', $content, [
+                'fileName' => $filename
+            ]);
+        }
+        $response = $request->send();
+        $this->validateResponse($response);
+
+        return isset($response) ? $response->data : null;
+    }
+
+    /**
+     * Validate Api response and throw exception if necessary
+     * @param Response $response
+     * @return void
+     */
+    protected function validateResponse(Response $response): void
+    {
+        if (!empty($response->data['error_code'])) {
+            if (!empty($response->data['description'])) {
+                throw new \RuntimeException('Telegram Api Error: ' . $response->data['description']);
+            }
+            throw new \RuntimeException('Telegram Api Error: ' . $response->content);
+        }
     }
 }
