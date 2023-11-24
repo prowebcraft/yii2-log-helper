@@ -206,12 +206,14 @@ trait Log
     {
         $details = self::getRequestContext();
         $request = Yii::$app->getRequest();
-        if ($body = $request->getRawBody() ?: $request->getBodyParams()) {
-            if (is_string($body)) {
-                $body = json_decode($body, true);
+        if (method_exists($request, 'getRawBody')) {
+            if ($body = $request?->getRawBody() ?: $request?->getBodyParams()) {
+                if (is_string($body)) {
+                    $body = json_decode($body, true);
+                }
+                $details .= "\n<b>Request Params:</b> "
+                    . json_encode($body, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n";
             }
-            $details .= "\n<b>Request Params:</b> "
-                . json_encode($body, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n";
         }
 
         return self::addLogBuffer("<b>Request Data:</b> %s",
