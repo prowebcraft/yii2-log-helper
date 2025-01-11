@@ -28,6 +28,7 @@ trait Log
     public static function toTelegram($format, ...$args): void
     {
         if (($message = static::getMessageBody(func_get_args()))) {
+            $message .= static::shiftExtraData();
             if (Yii::$app->has('telegram')) {
                 $telegram = Yii::$app->telegram;
                 $target = $telegram->getTarget(static::$category);
@@ -36,6 +37,8 @@ trait Log
                     $message .= "\n" . $extra;
                 }
                 $telegram->sendMessage($target, $message);
+            } else {
+                throw new \yii\base\InvalidConfigException("Telegram component must be configured properly");
             }
         }
     }
@@ -157,6 +160,22 @@ trait Log
     }
 
     /**
+     * Shift and retrieve extra log data from the buffer.
+     * Combines all shifted log buffer data into a single message.
+     *
+     * @return static
+     */
+    protected static function shiftExtraData(): static
+    {
+        $message = '';
+        // Shift extra log from buffer
+        while ($extra = array_shift(self::$logBuffer)) {
+            $message .= "\n" . $extra;
+        }
+        return $message;
+    }
+
+    /**
      * Process logging
      * @param string $message
      * @param int $level
@@ -164,10 +183,7 @@ trait Log
      */
     protected static function processLog(string $message, int $level = Logger::LEVEL_INFO): void
     {
-        // Apeend extra log from buffer
-        while ($extra = array_shift(self::$logBuffer)) {
-            $message .= "\n" . $extra;
-        }
+        $message .= static::shiftExtraData();
         Yii::getLogger()->log($message, $level, static::$category);
     }
 
