@@ -160,12 +160,25 @@ trait Log
     }
 
     /**
+     * Generate a formatted message
+     * @param string $format The format string for the message
+     * @param mixed ...$args Additional arguments to be formatted in the message
+     * @return string The formatted message string
+     */
+    public static function getMessage($format, ...$args): string
+    {
+        $message = static::getMessageBody(func_get_args());
+        $message .= static::shiftExtraData();
+        return $message;
+    }
+
+    /**
      * Shift and retrieve extra log data from the buffer.
      * Combines all shifted log buffer data into a single message.
      *
      * @return static
      */
-    protected static function shiftExtraData(): static
+    protected static function shiftExtraData(): string
     {
         $message = '';
         // Shift extra log from buffer
